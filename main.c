@@ -6,46 +6,37 @@
 #include <string.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
+#define NI_MAXHOST 1025
+#include <stdio.h>
 int main() {
-    char service[4] = "ssh";
-    struct addrinfo * result , *rp , hints ;
+    struct addrinfo * resultado;
+    struct addrinfo * res;
     struct sockaddr_in *socka;
-    struct sockaddr *sa;
-    struct in_addr * ip ;
-    char iptext [INET_ADDRSTRLEN ] ;
-    int error , error2;
-    memset(&hints , 0 , sizeof ( hints ) ) ;
-    hints.ai_family = AF_INET ;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = 0;
-    hints.ai_flags = AI_CANONNAME;
-    error = getaddrinfo ( "www.elpais.es" , NULL, &hints , &result ) ;
-    if( error != 0) {
-        fprintf( stderr , " Error en getaddrinfo : %s \n" , gai_strerror( error ) ) ;
-        exit( EXIT_FAILURE) ;
-    }
-    printf( "Nombre canonico : %s \n" , result->ai_canonname ) ;
-    for ( rp = result ; rp != NULL ; rp = rp->ai_next ) {
-        socka = (struct sockaddr_in *) rp->ai_addr ;
-        ip = &(socka->sin_addr) ;
-        if( inet_ntop( rp->ai_family , ip , iptext , sizeof ( iptext ) ) == NULL) {
-            perror ( " Error en inet_ntop " ) ;
-            exit ( EXIT_FAILURE ) ;
-        }
-       printf( " Direccion IP : %s \n" , iptext ) ;
-    }
-
-    error2 = getnameinfo(sa, sizeof(*sa), iptext, sizeof(iptext),NULL, 0 , NI_NAMEREQD);
-    if( error2 != 0) {
-        fprintf( stderr , " Error en getaddrinfo : %s \n" , gai_strerror( error2 ) ) ;
-        exit( EXIT_FAILURE) ;
-    }
-    printf( "Puerto : %s \n" , iptext ) ;
-
-
-
-    freeaddrinfo ( result ) ;
-
-    return 0;
+    int error;
+   error = getaddrinfo (NULL, "ssh", NULL , &resultado);
+   if (error != 0)
+   {   perror ("getaddrinfo");
+       fprintf (stderr, "error en getaddrinfo:%s\n", gai_strerror (error));
+        exit (EXIT_FAILURE);
+   }
+   for (res = resultado; res!= NULL; res = res-> ai_next)
+   {
+       char hostname [NI_MAXHOST];
+       int puerto;
+       socka = (struct sockaddr_in *) res->ai_addr ;
+       puerto = (socka->sin_port);
+       error = getnameinfo (res-> ai_addr, res-> ai_addrlen, hostname, NI_MAXHOST, NULL, 0, 0);
+       if (error!= 0)
+       {
+           fprintf (stderr, "error en getnameinfo:%s \n", gai_strerror (error));
+           //Seguir;
+       }
+       if (* hostname != '\0') printf ("nombre de host:%s \n", hostname);
+       printf("Puerto: %d\n", htons(puerto));
+   }
+   freeaddrinfo (resultado);
+   return 0;
 }
+
+
+
